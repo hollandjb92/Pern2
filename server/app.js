@@ -32,12 +32,14 @@ app.get("/api/v1/restaurants", async (req, res) => {
 //get one restaurant
 app.get("/api/v1/restaurants/:id", async (req, res) => {
     try {
-        const result = await db.query("select * from restaurants WHERE id = $1", [req.params.id] );
+		const restaurant = await db.query("select * from restaurants WHERE id = $1", [req.params.id] );
+		const reviews = await db.query("select * from reviews WHERE restaurant_id = $1", [req.params.id] );
 
         res.status(200).json({
             status: 200,
             data: {
-                restaurant: result.rows[0]
+				restaurant: restaurant.rows[0],
+				reviews: reviews.rows
             }
         });
     } catch (err) {
@@ -95,6 +97,23 @@ app.delete("/api/v1/restaurants/:id", async (req, res) => {
         console.error(err.message);
     }
    
+});
+
+app.post("/api/v1/restaurants/:id/addReview", async (req, res) => {
+	try {
+		const {id} = req.params;
+		const {rating, review, name} = req.body;
+		const result = await db.query("INSERT INTO reviews(name, rating, review, restaurant_id) VALUES($1, $2, $3,$4) RETURNING *",[name, rating, review, id]);
+
+		res.status(201).json({
+			status: "success",
+			data:{
+				review: result.rows[0]
+			}
+		});
+	} catch (err) {
+		console.error(err.message);
+	}
 })
 
 
